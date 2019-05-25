@@ -1,0 +1,124 @@
+Sub CalcTotals()
+    
+    Dim lastRow As Double
+    Dim getTicker As String
+    Dim Total As Double
+    Dim rownum As Double
+    rownum = 2
+    Dim yearOpenPrice As Double
+    Dim yearClosePrice As Double
+    
+    ' Get number of sheets
+    Dim shtcnt As Integer
+    shtcnt = Worksheets.Count
+    
+    ' Insert headers once
+    Cells(1, 9) = "Ticker"
+    Cells(1, 10) = "Yearly Change"
+    Cells(1, 11) = "Percent Change"
+    Cells(1, 12) = "Total Stock Volume"
+    
+    Cells(2, 15) = "Greatest % Increase"
+    Cells(3, 15) = "Greatest % Decrease"
+    Cells(4, 15) = "Greatest Total Volumne"
+    Cells(1, 16) = "Ticker"
+    Cells(1, 17) = "Value"
+        
+    ' Process each sheets
+    For Each ws In Worksheets
+        
+        'Reset Total for every sheet and get last for every sheet
+        Total = 0
+        lastRow = ws.Cells(Rows.Count, 1).End(xlUp).Row
+        
+        ' Calculate total across all lines in each sheets
+        For i = 2 To lastRow
+        
+            'If Ticket symbol changes
+            If Cells(i, 1) <> Cells(i + 1, 1) Then
+                
+                ' Get Ticker symbol
+                getTicker = ws.Cells(i, 1).Value
+                
+                ' Calc Final Total for the Ticker
+                Total = Total + ws.Cells(i, 7)
+                
+                'Insert Ticker and Total in cells
+                Cells(rownum, 9) = getTicker
+                Cells(rownum, 12) = Total
+    
+                ' Reset Total for next ticker
+                Total = 0
+                
+                ' Get Closing Price for the ticker
+                yearClosePrice = ws.Cells(i, 6)
+                
+                'Calculate Yearly Change and Percent Change for the ticker
+                Cells(rownum, 10) = yearClosePrice - yearOpenPrice
+                If yearOpenPrice = 0 Then
+                    Cells(rownum, 11) = 0
+                Else
+                    Cells(rownum, 11) = (yearClosePrice - yearOpenPrice) / yearOpenPrice
+                End If
+                
+                ' Highlight cells
+                If Cells(rownum, 10) < 0 Then
+                    Cells(rownum, 10).Interior.ColorIndex = 3
+                Else
+                    Cells(rownum, 10).Interior.ColorIndex = 4
+                End If
+        
+                ' Increament rownum counter so next ticker can be inserted in next line
+                rownum = rownum + 1
+            'If Ticket symbol NOT changes, keep calculating Total
+            Else
+                ' If prior cell ticker is not same as current ticker, get Open price
+                If Cells(i - 1, 1) <> Cells(i, 1) Then
+                    yearOpenPrice = ws.Cells(i, 3)
+                End If
+                Total = Total + ws.Cells(i, 7)
+            End If
+           
+           
+           
+        Next i
+       
+        
+    Next
+    
+    Dim lastRowSummary As Integer
+    
+    lastRowSummary = Range("I1").End(xlDown).Row
+
+    ' Format percent
+    Range("K2:K" & lastRowSummary).NumberFormat = "0.00%"
+    
+    ' Find Greatest % Increase
+    Dim rng As Range
+    Dim dblMax As Double
+
+    Set rng = Range("K2:K" & lastRowSummary)
+    dblMax = Application.WorksheetFunction.Max(rng)
+    Cells(2, 17) = dblMax
+    Cells(2, 17).NumberFormat = "0.00%"
+    Cells(2, 16) = Cells(Application.WorksheetFunction.Match(Cells(2, 17), Range("K2:K" & lastRowSummary), 0) + 1, 9)
+    
+    ' Find Greatest % Decrease
+    Set rng = Range("K2:K" & lastRowSummary)
+    dblMax = Application.WorksheetFunction.Min(rng)
+    Cells(3, 17) = dblMax
+    Cells(3, 17).NumberFormat = "0.00%"
+    Cells(3, 16) = Cells(Application.WorksheetFunction.Match(Cells(3, 17), Range("K2:K" & lastRowSummary), 0) + 1, 9)
+    
+    ' Find Greatest Total Volume
+    Set rng = Range("L2:L" & lastRowSummary)
+    dblMax = Application.WorksheetFunction.Max(rng)
+    Cells(4, 17) = dblMax
+    Cells(4, 16) = Cells(Application.WorksheetFunction.Match(Cells(4, 17), Range("L2:L" & lastRowSummary), 0) + 1, 9)
+    
+    ' Auto fit columns so numbers are readable
+    Columns("I:Q").AutoFit
+
+    
+End Sub
+
